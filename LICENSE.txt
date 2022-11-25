@@ -1,0 +1,3 @@
+Shaders in this repository are individually licensed, so check individual files for licensing details.
+
+In general, they're licensed under open source licenses such as MIT and GPL, depending on how protective I feel of the shader in question. I'll add supplementary documents as needed.
