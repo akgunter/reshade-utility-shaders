@@ -45,30 +45,30 @@ uniform bool rescale_y_axis <
 
 
 void unstretchPS(
-    in const float4 pos : SV_Position,
-    in const float2 texcoord : TEXCOORD0,
+	in const float4 pos : SV_Position,
+	in const float2 texcoord : TEXCOORD0,
 
-    out float4 color : SV_Target
+	out float4 color : SV_Target
 ) {
 	float dr = float(display_resolution.x) / float(display_resolution.y);
 	float cr = content_aspect_ratio.x / content_aspect_ratio.y;
-	
+
 	float is_in_boundary;
 	float2 texcoord_uncropped;
 	[branch]
 	if (rescale_y_axis) {
 		float scaling_factor = dr / cr;
-		
+
 		float upper_bound = (1 - scaling_factor) * 0.5;
 		float lower_bound = 1 - upper_bound;
-	
+
 		is_in_boundary = float(texcoord.y >= upper_bound && texcoord.y <= lower_bound);
 		float coord_adj = (texcoord.y - 0.5) / scaling_factor + 0.5;
 		texcoord_uncropped = float2(texcoord.x, coord_adj);
 	}
 	else {
 		float scaling_factor = cr / dr;
-		
+
 		float left_bound = (1 - scaling_factor) * 0.5;
 		float right_bound = 1 - left_bound;
 
@@ -76,8 +76,8 @@ void unstretchPS(
 		float coord_adj = (texcoord.x - 0.5) / scaling_factor + 0.5;
 		texcoord_uncropped = float2(coord_adj, texcoord.y);
 	}
-	
-    float4 raw_color = tex2D(ReShade::BackBuffer, texcoord_uncropped);
+
+	float4 raw_color = tex2D(ReShade::BackBuffer, texcoord_uncropped);
 	color = lerp(float4(0, 0, 0, 1), raw_color, is_in_boundary);
 }
 
