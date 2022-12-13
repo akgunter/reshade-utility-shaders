@@ -23,13 +23,17 @@
 
 #include "ReShade.fxh"
 
+#define macro_max(c, d) (c) * ((int) ((c) >= (d))) + (d) * ((int) ((c) < (d)))
+
+static const int2 BUFFER_SIZE = int2(BUFFER_WIDTH, BUFFER_HEIGHT);
+
 uniform uint2 display_resolution <
 	ui_label = "Displayed Resolution";
 	ui_tooltip = "The true size of the game's window. Set to your monitor's resolution if in fullscreen.";
 	ui_type = "input";
 	ui_min = 1;
 	ui_step = 1;
-> = uint2(BUFFER_WIDTH, BUFFER_HEIGHT);
+> = BUFFER_SIZE;
 
 uniform float2 content_aspect_ratio <
 	ui_label = "Desired Aspect Ratio";
@@ -43,6 +47,16 @@ uniform bool rescale_y_axis <
 	ui_tooltip = "Toggles between unstretching horizontally or vertically";
 > = false;
 
+uniform int output_offset < 
+	ui_label = "Offset Output";
+	ui_tooltip = "Shifts the output if desired";
+
+	ui_type = "drag";
+	ui_step = 1;
+	ui_min = -macro_max(BUFFER_WIDTH, BUFFER_HEIGHT)/2;
+	ui_max = macro_max(BUFFER_WIDTH, BUFFER_HEIGHT)/2;
+> = 0;
+
 
 void unstretchPS(
 	in const float4 pos : SV_Position,
@@ -50,6 +64,9 @@ void unstretchPS(
 
 	out float4 color : SV_Target
 ) {
+	float2 offset_xy = (rescale_y_axis ? float2(0, 1) : float2(1, 0)) * output_offset * rcp(BUFFER_SIZE);
+	float2 source_coord = texcoord - offset_xy;
+
 	float dr = float(display_resolution.x) / float(display_resolution.y);
 	float cr = content_aspect_ratio.x / content_aspect_ratio.y;
 
@@ -62,9 +79,9 @@ void unstretchPS(
 		float upper_bound = (1 - scaling_factor) * 0.5;
 		float lower_bound = 1 - upper_bound;
 
-		is_in_boundary = float(texcoord.y >= upper_bound && texcoord.y <= lower_bound);
-		float coord_adj = (texcoord.y - 0.5) / scaling_factor + 0.5;
-		texcoord_uncropped = float2(texcoord.x, coord_adj);
+		is_in_boundary = float(source_coord.y >= upper_bound && source_coord.y <= lower_bound);
+		float coord_adj = (source_coord.y - 0.5) / scaling_factor + 0.5;
+		texcoord_uncropped = float2(source_coord.x, coord_adj);
 	}
 	else {
 		float scaling_factor = cr / dr;
@@ -72,9 +89,9 @@ void unstretchPS(
 		float left_bound = (1 - scaling_factor) * 0.5;
 		float right_bound = 1 - left_bound;
 
-		is_in_boundary = float(texcoord.x >= left_bound && texcoord.x <= right_bound);
-		float coord_adj = (texcoord.x - 0.5) / scaling_factor + 0.5;
-		texcoord_uncropped = float2(coord_adj, texcoord.y);
+		is_in_boundary = float(source_coord.x >= left_bound && source_coord.x <= right_bound);
+		float coord_adj = (source_coord.x - 0.5) / scaling_factor + 0.5;
+		texcoord_uncropped = float2(coord_adj, source_coord.y);
 	}
 
 	float4 raw_color = tex2D(ReShade::BackBuffer, texcoord_uncropped);
