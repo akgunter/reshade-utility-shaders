@@ -21,6 +21,18 @@
 //  IN THE SOFTWARE.
 
 
+/*
+ *  This is a minimalist shader for changing the aspect ratio of your game.
+ *
+ *  It's primarily designed for games that stretch to fill the screen.
+ *  For example, if you try to run some games at 2560x1440 on a 3440x1440 monitor,
+ *  the game will stretch itself horizontally to fill the entire scren.
+ *
+ *  This shader lets you "unstretch" the game, so it has the correct aspect ratio
+ *  on any monitor. You can also shift the output side-to-side if you want.
+ */
+
+
 #include "ReShade.fxh"
 
 #define macro_max(c, d) (c) * ((int) ((c) >= (d))) + (d) * ((int) ((c) < (d)))
