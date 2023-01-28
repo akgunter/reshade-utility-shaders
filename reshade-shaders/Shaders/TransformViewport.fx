@@ -81,6 +81,17 @@ uniform float2 output_offset <
 	ui_max = 0.5 * BUFFER_SIZE;
 > = 0;
 
+uniform uint rotation_mode <
+        ui_label   = "Rotate Screen";
+        ui_type    = "combo";
+        ui_items   = "0 degrees\0"
+                     "90 degrees\0"
+                     "180 degrees\0"
+                     "270 degrees\0";
+                     
+    ui_spacing = 2;
+> = 0;
+
 
 void transformPS(
 	in float4 pos : SV_Position,
@@ -88,14 +99,33 @@ void transformPS(
 
 	out float4 color : SV_Target
 ) {
+    
     float2 output_scale = float2(output_resolution) / BUFFER_SIZE;
-
     float2 input_offset = float2(1, -1) * input_offset / BUFFER_SIZE;
     float2 output_offset = float2(1, -1) * output_offset / BUFFER_SIZE;
-    float2 rescaling_factor = float2(input_resolution) / float2(output_resolution);
+
+    float2x2 rotation_factor;
+    float2 rescaling_factor;
+    [branch]
+    if (rotation_mode == 0) {
+        rotation_factor = float2x2(1, 0, 0, 1);
+        rescaling_factor = float2(input_resolution) / float2(output_resolution);
+    }
+    else if (rotation_mode == 1) {
+        rotation_factor = float2x2(0, -1, 1, 0);
+        rescaling_factor = float2(input_resolution).yx / float2(output_resolution);
+    }
+    else if (rotation_mode == 2) {
+        rotation_factor = float2x2(-1, 0, 0, -1);
+        rescaling_factor = float2(input_resolution) / float2(output_resolution);
+    }
+    else {
+        rotation_factor = float2x2(0, 1, -1, 0);
+        rescaling_factor = float2(input_resolution).yx / float2(output_resolution);
+    }
 
     float2 incoord = outcoord - output_offset;
-    incoord = 2 * (incoord - 0.5);
+    incoord = mul(2 * (incoord - 0.5), rotation_factor);
     incoord *= rescaling_factor;
     incoord = incoord * 0.5 + 0.5;
     incoord += input_offset;
